@@ -1,0 +1,32 @@
+// Prisma schema for Single-Click Certificate Email Sender
+// Database: MySQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Admin user for login (simple auth)
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // bcrypt hashed
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+// Participant - receives certificate email
+model Participant {
+  id            String   @id @default(uuid())
+  name          String
+  email         String
+  eventName     String
+  certificateId String   @unique // Unique ID shown on certificate
+  status        String   @default("PENDING") // PENDING | SENT | FAILED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
