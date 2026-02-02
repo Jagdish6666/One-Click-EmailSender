@@ -49,12 +49,49 @@ router.post("/template", upload.single("template"), (req, res) => {
 
 /**
  * GET /api/settings/template-info
- * @description Check if a template exists.
+ * @description Check if a template exists and return settings.
  */
-router.get("/template-info", (req, res) => {
+router.get("/info", (req, res) => {
     const templatePath = path.join(__dirname, "../uploads/template.pdf");
+    const settingsPath = path.join(__dirname, "../uploads/settings.json");
+
     const exists = fs.existsSync(templatePath);
-    res.json({ exists });
+    let settings = { nameX: null, nameY: null, nameSize: 40 };
+
+    if (fs.existsSync(settingsPath)) {
+        try {
+            settings = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
+        } catch (e) {
+            console.error("Error reading settings.json", e);
+        }
+    }
+
+    res.json({ exists, settings });
+});
+
+/**
+ * POST /api/settings/config
+ * @description Save certificate template configuration.
+ */
+router.post("/config", (req, res) => {
+    try {
+        const { nameX, nameY, nameSize } = req.body;
+        const uploadDir = path.join(__dirname, "../uploads");
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const settingsPath = path.join(uploadDir, "settings.json");
+        const settings = {
+            nameX: parseFloat(nameX),
+            nameY: parseFloat(nameY),
+            nameSize: parseInt(nameSize)
+        };
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        res.json({ success: true, message: "Settings saved successfully", settings });
+    } catch (err) {
+        console.error("Settings save error:", err);
+        res.status(500).json({ error: "Failed to save settings" });
+    }
 });
 
 module.exports = router;
