@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: certificate-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=mysql://root:password@db:3306/certemail
+      - PORT=3001
+      # Add other environment variables from .env here if needed
+      # e.g. SENDGRID_API_KEY, JWT_SECRET, etc.
+    depends_on:
+      - db
+    networks:
+      - app-network
+    restart: always
+
+  frontend:
+    build: .
+    container_name: certificate-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mysql://root:password@db:3306/certemail
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+    depends_on:
+      - backend
+      - db
+    networks:
+      - app-network
+    restart: always
+
+  db:
+    image: mysql:8
+    container_name: certificate-db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: certemail
+    ports:
+      - "3307:3306" # Hosts's 3307 maps to container's 3306 to avoid conflict with local mysql
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+    restart: always
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:
