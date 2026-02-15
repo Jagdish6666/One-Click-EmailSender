@@ -30,3 +30,5 @@ model Participant {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+// prisma done
