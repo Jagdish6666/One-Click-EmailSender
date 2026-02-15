@@ -6,7 +6,7 @@ const { prisma } = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
-// router.use(requireAuth); // Currently disabled for project focus
+router.use(requireAuth);
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });

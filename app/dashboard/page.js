@@ -89,171 +89,120 @@ export default function DashboardPage() {
   const pendingCount = participants.filter((p) => p.status === "PENDING").length
 
   return (
-    <main style={styles.main}>
-      <header style={styles.header}>
-        <h1 style={styles.h1}>Admin Dashboard</h1>
-        <button onClick={handleLogout} style={styles.logout}>
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: 40 }}>
+      <header className="header-container">
+        <h1 className="title" style={{ textAlign: "left", margin: 0 }}>
+          Admin Dashboard
+        </h1>
+        <button onClick={handleLogout} className="btn-primary" style={{ width: "auto" }}>
           Logout
         </button>
       </header>
 
-      <section style={styles.section}>
-        <h2 style={styles.h2}>Send Certificates</h2>
-        <p style={styles.p}>
+      <section className="card">
+        <h2 className="title" style={{ fontSize: "1.5rem", textAlign: "left" }}>
+          Send Certificates
+        </h2>
+        <p className="subtitle" style={{ textAlign: "left", marginBottom: 20 }}>
           {pendingCount} participant(s) pending. Click once to generate PDFs and send emails.
         </p>
         <button
           onClick={handleSendCertificates}
           disabled={sending || pendingCount === 0}
-          style={{ ...styles.primaryButton, opacity: pendingCount === 0 ? 0.6 : 1 }}
+          className="btn-primary"
+          style={{ width: "auto", opacity: pendingCount === 0 ? 0.6 : 1 }}
         >
           {sending ? "Sending..." : "Send Certificates"}
         </button>
       </section>
 
-      <section style={styles.section}>
-        <h2 style={styles.h2}>Add Participant</h2>
-        <form onSubmit={handleAddParticipant} style={styles.form}>
-          <input
-            placeholder="Name"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            required
-            style={styles.input}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            required
-            style={styles.input}
-          />
-          <input
-            placeholder="Event name"
-            value={form.eventName}
-            onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
-            required
-            style={styles.input}
-          />
-          <button type="submit" disabled={addLoading} style={styles.button}>
+      <section className="card">
+        <h2 className="title" style={{ fontSize: "1.5rem", textAlign: "left", marginBottom: 20 }}>
+          Add Participant
+        </h2>
+        <form onSubmit={handleAddParticipant} className="form-group" style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end" }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <input
+              placeholder="Name"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              required
+              className="input-field"
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <input
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              required
+              className="input-field"
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <input
+              placeholder="Event name"
+              value={form.eventName}
+              onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
+              required
+              className="input-field"
+            />
+          </div>
+          <button type="submit" disabled={addLoading} className="btn-primary" style={{ width: "auto", minWidth: 100 }}>
             {addLoading ? "Adding..." : "Add"}
           </button>
         </form>
       </section>
 
-      {error && <p style={styles.error}>{error}</p>}
-      {success && <p style={styles.success}>{success}</p>}
+      {error && <p className="error-msg" style={{ marginBottom: 20 }}>{error}</p>}
+      {success && (
+        <p className="error-msg" style={{ background: "rgba(34, 197, 94, 0.2)", borderColor: "rgba(34, 197, 94, 0.4)", color: "#4ade80", marginBottom: 20 }}>
+          {success}
+        </p>
+      )}
 
-      <section style={styles.section}>
-        <h2 style={styles.h2}>Participants</h2>
+      <section className="card">
+        <h2 className="title" style={{ fontSize: "1.5rem", textAlign: "left", marginBottom: 20 }}>
+          Participants
+        </h2>
         {loading ? (
-          <p>Loading...</p>
+          <p className="subtitle" style={{ textAlign: "left" }}>Loading...</p>
         ) : participants.length === 0 ? (
-          <p style={styles.muted}>No participants yet. Add one above.</p>
+          <p className="subtitle" style={{ textAlign: "left" }}>No participants yet. Add one above.</p>
         ) : (
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Email</th>
-                <th style={styles.th}>Event</th>
-                <th style={styles.th}>Certificate ID</th>
-                <th style={styles.th}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {participants.map((p) => (
-                <tr key={p.id}>
-                  <td style={styles.td}>{p.name}</td>
-                  <td style={styles.td}>{p.email}</td>
-                  <td style={styles.td}>{p.eventName}</td>
-                  <td style={styles.td}>{p.certificateId}</td>
-                  <td style={styles.td}>
-                    <span
-                      style={{
-                        ...styles.badge,
-                        background:
-                          p.status === "SENT"
-                            ? "#22c55e"
-                            : p.status === "FAILED"
-                            ? "#ef4444"
-                            : "#f59e0b",
-                      }}
-                    >
-                      {p.status}
-                    </span>
-                  </td>
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Event</th>
+                  <th>Certificate ID</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {participants.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.name}</td>
+                    <td>{p.email}</td>
+                    <td>{p.eventName}</td>
+                    <td>{p.certificateId}</td>
+                    <td>
+                      <span className={`status-badge ${p.status === "SENT" ? "status-sent" :
+                          p.status === "FAILED" ? "status-failed" : "status-pending"
+                        }`}>
+                        {p.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </main>
   )
-}
-
-const styles = {
-  main: { maxWidth: 900, margin: "0 auto", padding: 24 },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  h1: { fontSize: "1.75rem" },
-  logout: {
-    padding: "8px 16px",
-    background: "#666",
-    color: "white",
-    border: "none",
-    borderRadius: 8,
-    cursor: "pointer",
-  },
-  section: {
-    background: "white",
-    padding: 24,
-    borderRadius: 12,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-    marginBottom: 24,
-  },
-  h2: { fontSize: "1.25rem", marginBottom: 12 },
-  p: { color: "#666", marginBottom: 16 },
-  primaryButton: {
-    padding: "12px 24px",
-    background: "#0070f3",
-    color: "white",
-    border: "none",
-    borderRadius: 8,
-    fontSize: 16,
-    cursor: "pointer",
-  },
-  form: { display: "flex", flexDirection: "column", gap: 12, maxWidth: 400 },
-  input: {
-    padding: 10,
-    border: "1px solid #ddd",
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  button: {
-    padding: 10,
-    background: "#333",
-    color: "white",
-    border: "none",
-    borderRadius: 8,
-    cursor: "pointer",
-  },
-  error: { color: "#c00", marginBottom: 12 },
-  success: { color: "#22c55e", marginBottom: 12 },
-  muted: { color: "#888" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { textAlign: "left", padding: "10px 8px", borderBottom: "2px solid #eee" },
-  td: { padding: "10px 8px", borderBottom: "1px solid #eee" },
-  badge: {
-    padding: "4px 8px",
-    borderRadius: 6,
-    color: "white",
-    fontSize: 12,
-  },
 }

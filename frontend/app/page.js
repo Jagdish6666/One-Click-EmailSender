@@ -1,200 +1,237 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import Navbar from "@/components/Navbar"
+import { useRouter } from "next/navigation"
+import { getApiUrl, authHeaders, setToken } from "@/lib/api"
 
 export default function Home() {
+  const router = useRouter()
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("login")
+
+  // Form states for the landing page auth card
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
+  const [authError, setAuthError] = useState("")
+  const [authLoading, setAuthLoading] = useState(false)
+
+  async function handleAuth(e) {
+    e.preventDefault()
+    setAuthError("")
+    setAuthLoading(true)
+
+    const endpoint = activeTab === 'login' ? '/api/auth/login' : '/api/auth/signup'
+    const payload = activeTab === 'login'
+      ? { email, password }
+      : { email, password, name }
+
+    try {
+      const res = await fetch(`${getApiUrl()}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setAuthError(data.error || "Authentication failed")
+        setAuthLoading(false)
+        return
+      }
+
+      if (data.token) {
+        setToken(data.token)
+        window.location.href = "/dashboard" // Force refresh to update auth state
+      }
+    } catch (err) {
+      setAuthError("Something went wrong. Please try again.")
+      setAuthLoading(false)
+    }
+  }
+
   return (
-    <div style={styles.wrapper}>
-      <Navbar />
-      <main>
-        {/* Hero */}
-        <section style={styles.hero}>
-          <div style={styles.heroContent}>
-            <h1 style={styles.heroTitle}>Single-Click Certificate Email Sender</h1>
-            <p style={styles.heroSubtitle}>
-              Automate certificate distribution for hackathons, workshops, webinars, and training programs.
-              Send personalized PDF certificates to all participants with one click.
-            </p>
-            <div style={styles.heroButtons}>
-              <Link href="/login" style={styles.ctaPrimary}>Login</Link>
-              <Link href="/signup" style={styles.ctaSecondary}>Sign up</Link>
-              <Link href="/dashboard" style={styles.ctaOutline}>Dashboard</Link>
+    <main className="page-container">
+      <div className="split-layout">
+        {/* Left Panel */}
+        <div className="hero-content">
+          <div className="brand-logo">
+            <div className="brand-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z" />
+              </svg>
+            </div>
+            <span>CertificateSender</span>
+          </div>
+
+          <h1 className="hero-title">
+            Advanced <br />
+            <span className="text-gradient">Certificate Sending</span> for <br />
+            Modern Teams.
+          </h1>
+
+          <p className="hero-description">
+            Real-Time Certificate Generation & Email System powered by next-gen bulk processing algorithms.
+          </p>
+
+          <div className="feature-list">
+            <div className="feature-item">
+              <div className="feature-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+              </div>
+              <span>Real-time delivery</span>
+            </div>
+            <div className="feature-item">
+              <div className="feature-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+              <span>Custom Templates</span>
+            </div>
+            <div className="feature-item">
+              <div className="feature-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <span>Secure Authentication</span>
+            </div>
+            <div className="feature-item">
+              <div className="feature-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </div>
+              <span>REST API Access</span>
             </div>
           </div>
-        </section>
 
-        {/* Problem */}
-        <section style={styles.section}>
-          <div style={styles.container}>
-            <h2 style={styles.sectionTitle}>The Problem</h2>
-            <p style={styles.sectionIntro}>
-              In colleges, hackathons, workshops, webinars, and training programs, organizers often need to send certificates to hundreds of participants.
-            </p>
-            <ul style={styles.problemList}>
-              <li style={styles.problemListItem}>Manual email sending is time-consuming</li>
-              <li style={styles.problemListItem}>Gmail does not support dynamic attachments per user</li>
-              <li style={styles.problemListItem}>High chance of mistakes (wrong name, missing attachment)</li>
-              <li style={styles.problemListItem}>No tracking of who received certificates</li>
-              <li style={styles.problemListItem}>No retry mechanism for failed emails</li>
-            </ul>
+          <div className="social-proof">
+            <div className="avatars">
+              {/* Placeholder Avatars */}
+              <div className="avatar" style={{ backgroundColor: '#FF5733' }}></div>
+              <div className="avatar" style={{ backgroundColor: '#33FF57' }}></div>
+              <div className="avatar" style={{ backgroundColor: '#3357FF' }}></div>
+            </div>
+            <p className="proof-text">Joined by <strong>2,400+</strong> enterprises globally</p>
           </div>
-        </section>
+        </div>
 
-        {/* Solution */}
-        <section style={styles.sectionAlt}>
-          <div style={styles.container}>
-            <h2 style={styles.sectionTitle}>Our Solution</h2>
-            <p style={styles.sectionIntro}>
-              A centralized platform where the admin adds participant details, certificates are generated automatically, and emails are sent in bulk with full status tracking.
-            </p>
-            <div style={styles.featureGrid}>
-              <div style={styles.featureCard}>
-                <span style={styles.featureIcon}>📋</span>
-                <h3 style={styles.featureTitle}>Participant Management</h3>
-                <p style={styles.featureText}>Store name, email, event name, certificate ID, and sending status securely in the database.</p>
+        {/* Right Panel - Auth Card */}
+        <div className="auth-wrapper">
+          <div className="auth-card">
+            <div className="auth-tabs">
+              <button
+                className={`tab-btn ${activeTab === 'login' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('login'); setAuthError(""); }}
+              >
+                Login
+              </button>
+              <button
+                className={`tab-btn ${activeTab === 'signup' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('signup'); setAuthError(""); }}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            <form onSubmit={handleAuth}>
+              {activeTab === 'signup' && (
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <div className="input-wrapper">
+                    <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <input
+                      type="text"
+                      placeholder="John Doe"
+                      className="form-input"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <div className="input-wrapper">
+                  <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  <input
+                    type="email"
+                    placeholder="name@company.com"
+                    className="form-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-              <div style={styles.featureCard}>
-                <span style={styles.featureIcon}>📄</span>
-                <h3 style={styles.featureTitle}>Certificate Generation</h3>
-                <p style={styles.featureText}>Unique PDF for each participant with name, event, certificate ID, and date inserted dynamically.</p>
+
+              <div className="form-group">
+                <label className="form-label">Password</label>
+                <div className="input-wrapper">
+                  <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="form-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-              <div style={styles.featureCard}>
-                <span style={styles.featureIcon}>✉️</span>
-                <h3 style={styles.featureTitle}>Automated Emails</h3>
-                <p style={styles.featureText}>SendGrid integration: personalized email with PDF attachment for every participant.</p>
+
+              {authError && <p className="error-msg" style={{ marginBottom: '20px' }}>{authError}</p>}
+
+              {activeTab === 'login' && (
+                <div className="form-options">
+                  <label className="checkbox-label">
+                    <input type="checkbox" style={{ accentColor: 'var(--primary)' }} />
+                    Remember me
+                  </label>
+                  <Link href="/forgot-password" className="forgot-link">Forgot password?</Link>
+                </div>
+              )}
+
+              <button type="submit" className="btn-primary" disabled={authLoading}>
+                {authLoading ? 'Processing...' : (activeTab === 'login' ? 'Sign In to Dashboard' : 'Get Started Now')}
+              </button>
+
+              <div className="divider">OR CONTINUE WITH</div>
+
+              <div className="social-buttons">
+                <button type="button" className="btn-social">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  Google
+                </button>
+                <button type="button" className="btn-social">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  SSO
+                </button>
               </div>
-              <div style={styles.featureCard}>
-                <span style={styles.featureIcon}>✅</span>
-                <h3 style={styles.featureTitle}>Status Tracking</h3>
-                <p style={styles.featureText}>Track Sent / Failed for each participant. No duplicate sends; retry failed ones if needed.</p>
-              </div>
+            </form>
+
+
+            <div className="footer-secure">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              END-TO-END ENCRYPTED PROTECTION
             </div>
           </div>
-        </section>
-
-        {/* Workflow */}
-        <section style={styles.section}>
-          <div style={styles.container}>
-            <h2 style={styles.sectionTitle}>How It Works</h2>
-            <ol style={styles.workflowList}>
-              <li>Admin logs into the system</li>
-              <li>Admin adds participant details</li>
-              <li>Participant data is saved in the database</li>
-              <li>Admin clicks &quot;Send Certificates&quot;</li>
-              <li>System generates certificate PDFs</li>
-              <li>System sends emails with attachments</li>
-              <li>System updates delivery status</li>
-              <li>Admin views final report</li>
-            </ol>
-            <div style={styles.workflowCta}>
-              <Link href="/login" style={styles.ctaPrimary}>Get Started</Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer style={styles.footer}>
-          <div style={styles.container}>
-            <p style={styles.footerText}>Single-Click Certificate Email Sender — Automated, scalable certificate distribution for real-world events.</p>
-          </div>
-        </footer>
-      </main>
-    </div>
+        </div>
+      </div>
+    </main>
   )
-}
-
-const styles = {
-  wrapper: { minHeight: "100vh", background: "var(--color-background)" },
-  hero: {
-    background: "linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)",
-    color: "white",
-    padding: "64px 24px 80px",
-    textAlign: "center",
-  },
-  heroContent: { maxWidth: 720, margin: "0 auto" },
-  heroTitle: {
-    fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
-    fontWeight: 700,
-    marginBottom: 16,
-    lineHeight: 1.2,
-  },
-  heroSubtitle: {
-    fontSize: "1.125rem",
-    opacity: 0.95,
-    marginBottom: 32,
-    lineHeight: 1.7,
-  },
-  heroButtons: { display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" },
-  ctaPrimary: {
-    display: "inline-block",
-    padding: "12px 24px",
-    background: "white",
-    color: "var(--color-primary)",
-    borderRadius: "var(--radius)",
-    fontWeight: 600,
-    fontSize: 16,
-  },
-  ctaSecondary: {
-    display: "inline-block",
-    padding: "12px 24px",
-    background: "rgba(255,255,255,0.2)",
-    color: "white",
-    border: "2px solid white",
-    borderRadius: "var(--radius)",
-    fontWeight: 600,
-    fontSize: 16,
-  },
-  ctaOutline: {
-    display: "inline-block",
-    padding: "12px 24px",
-    background: "transparent",
-    color: "white",
-    border: "2px solid rgba(255,255,255,0.8)",
-    borderRadius: "var(--radius)",
-    fontWeight: 600,
-    fontSize: 16,
-  },
-  section: { padding: "48px 24px", background: "var(--color-background)" },
-  sectionAlt: { padding: "48px 24px", background: "var(--color-surface)", boxShadow: "var(--shadow-sm)" },
-  container: { maxWidth: 900, margin: "0 auto" },
-  sectionTitle: { fontSize: "1.75rem", fontWeight: 700, marginBottom: 16, color: "var(--color-text)" },
-  sectionIntro: { fontSize: "1rem", color: "var(--color-text-muted)", marginBottom: 24, lineHeight: 1.7 },
-  problemList: {
-    listStyle: "disc",
-    paddingLeft: 24,
-    margin: 0,
-  },
-  problemListItem: {
-    padding: "8px 0",
-    color: "var(--color-text-muted)",
-  },
-  featureGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: 24,
-    marginTop: 32,
-  },
-  featureCard: {
-    background: "var(--color-background)",
-    padding: 24,
-    borderRadius: "var(--radius)",
-    boxShadow: "var(--shadow)",
-  },
-  featureIcon: { fontSize: 28, marginBottom: 12, display: "block" },
-  featureTitle: { fontSize: "1.125rem", fontWeight: 600, marginBottom: 8, color: "var(--color-text)" },
-  featureText: { fontSize: 14, color: "var(--color-text-muted)", lineHeight: 1.6 },
-  workflowList: {
-    listStyle: "decimal",
-    paddingLeft: 24,
-    color: "var(--color-text-muted)",
-    lineHeight: 2,
-    marginBottom: 32,
-  },
-  workflowCta: { textAlign: "center" },
-  footer: {
-    padding: "32px 24px",
-    background: "var(--color-text)",
-    color: "rgba(255,255,255,0.8)",
-    textAlign: "center",
-  },
-  footerText: { fontSize: 14, maxWidth: 600, margin: "0 auto" },
 }

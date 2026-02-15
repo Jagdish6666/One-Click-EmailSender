@@ -7,11 +7,10 @@ const express = require("express");
 const { prisma } = require("../lib/prisma");
 const { generateCertificatePDF, pdfToBase64 } = require("../lib/pdfGenerator");
 const { sendEmail } = require("../lib/mailer");
-// Auth is currently disabled for testing; uncomment to re-enable
-// const { requireAuth } = require("../middleware/auth");
+const { requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
-// router.use(requireAuth);
+router.use(requireAuth);
 
 /**
  * POST /api/send-certificates

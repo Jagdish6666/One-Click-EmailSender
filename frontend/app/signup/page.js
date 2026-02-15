@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import Navbar from "@/components/Navbar"
 import { getApiUrl, setToken } from "@/lib/api"
 
 export default function SignupPage() {
@@ -30,7 +29,11 @@ export default function SignupPage() {
         setLoading(false)
         return
       }
-      setToken(data.token)
+
+      if (data.token) {
+        setToken(data.token)
+      }
+
       router.push("/dashboard")
       router.refresh()
     } catch (err) {
@@ -40,92 +43,55 @@ export default function SignupPage() {
   }
 
   return (
-    <div style={styles.wrapper}>
-      <Navbar />
-      <main style={styles.main}>
-        <div style={styles.card}>
-          <h1 style={styles.h1}>Sign up</h1>
-          <p style={styles.subtitle}>Create an admin account to manage participants and send certificates.</p>
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <label style={styles.label}>Name (optional)</label>
+    <main className="container-center">
+      <div className="glass-card">
+        <h1 className="title">Create Account</h1>
+        <p className="subtitle">Join thousands of enterprises today</p>
+
+        <form onSubmit={handleSubmit} className="form-group">
+          <div className="input-group">
             <input
               type="text"
-              placeholder="Your name"
+              placeholder="Full Name (Optional)"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={styles.input}
+              className="input-field"
             />
-            <label style={styles.label}>Email</label>
+          </div>
+
+          <div className="input-group">
             <input
               type="email"
-              placeholder="you@example.com"
+              placeholder="Email Address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={styles.input}
+              className="input-field"
             />
-            <label style={styles.label}>Password</label>
+          </div>
+
+          <div className="input-group">
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={styles.input}
+              className="input-field"
             />
-            {error && <p style={styles.error}>{error}</p>}
-            <button type="submit" disabled={loading} style={styles.button}>
-              {loading ? "Creating account..." : "Sign up"}
-            </button>
-          </form>
-          <p style={styles.footer}>
-            Have an account? <Link href="/login" style={styles.footerLink}>Login</Link>
-          </p>
-        </div>
-      </main>
-    </div>
-  )
-}
+          </div>
 
-const styles = {
-  wrapper: { minHeight: "100vh", background: "var(--color-background)" },
-  main: {
-    minHeight: "calc(100vh - 60px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  card: {
-    background: "var(--color-surface)",
-    padding: 40,
-    borderRadius: "var(--radius-lg)",
-    boxShadow: "var(--shadow-lg)",
-    width: "100%",
-    maxWidth: 400,
-  },
-  h1: { fontSize: "1.75rem", fontWeight: 700, marginBottom: 8, color: "var(--color-text)" },
-  subtitle: { fontSize: 15, color: "var(--color-text-muted)", marginBottom: 28 },
-  form: { display: "flex", flexDirection: "column", gap: 20 },
-  label: { fontSize: 14, fontWeight: 600, color: "var(--color-text)" },
-  input: {
-    padding: 12,
-    border: "1px solid var(--color-border)",
-    borderRadius: "var(--radius)",
-    fontSize: 16,
-    background: "var(--color-surface)",
-  },
-  error: { color: "var(--color-failed)", fontSize: 14 },
-  button: {
-    padding: 14,
-    background: "var(--color-primary)",
-    color: "white",
-    border: "none",
-    borderRadius: "var(--radius)",
-    fontSize: 16,
-    fontWeight: 600,
-    marginTop: 8,
-  },
-  footer: { marginTop: 24, fontSize: 15, color: "var(--color-text-muted)", textAlign: "center" },
-  footerLink: { color: "var(--color-primary)", fontWeight: 600 },
+          {error && <p className="error-msg">{error}</p>}
+
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? "Creating account..." : "Sign Up"}
+          </button>
+        </form>
+
+        <p className="footer-text">
+          Already have an account? <Link href="/login">Login</Link>
+        </p>
+      </div>
+    </main>
+  )
 }

@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Navbar from "@/components/Navbar"
-import { getApiUrl, authHeaders, clearToken } from "@/lib/api"
+import { getApiUrl, authHeaders, clearToken, getToken } from "@/lib/api"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -14,107 +13,66 @@ export default function DashboardPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [form, setForm] = useState({ name: "", email: "", eventName: "" })
-  const [file, setFile] = useState(null)
+
+  // Settings State
+  const [settings, setSettings] = useState({ nameX: 0, nameY: 0, nameSize: 40 })
   const [templateFile, setTemplateFile] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const [savingSettings, setSavingSettings] = useState(false)
+
+  // Bulk Upload State
+  const [excelFile, setExcelFile] = useState(null)
   const [bulkLoading, setBulkLoading] = useState(false)
-  const [templateLoading, setTemplateLoading] = useState(false)
 
-  const apiUrl = getApiUrl()
-
+  // Fetch data on load
   useEffect(() => {
-    fetchParticipants()
+    async function init() {
+      await Promise.all([fetchParticipants(), fetchSettings()])
+      setLoading(false)
+    }
+    init()
   }, [])
+
+  async function fetchSettings() {
+    try {
+      const res = await fetch(`${getApiUrl()}/api/settings/info`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.settings) setSettings(data.settings)
+      }
+    } catch (e) {
+      console.error("Failed to fetch settings", e)
+    }
+  }
 
   async function fetchParticipants() {
     try {
-      const res = await fetch(`${apiUrl}/api/participants`, {
-        headers: authHeaders(),
+      const headers = authHeaders()
+      if (!headers.Authorization) {
+        router.push("/login")
+        return
+      }
+
+      const res = await fetch(`${getApiUrl()}/api/participants`, {
+        headers: headers
       })
+
       if (res.status === 401) {
         clearToken()
         router.push("/login")
         return
       }
-      const data = await res.json()
-      setParticipants(Array.isArray(data) ? data : [])
+
+      if (!res.ok) {
+        // Handle non-401 errors without redirecting immediately or throwing
+        // Only throw if critical
+      } else {
+        const data = await res.json()
+        setParticipants(Array.isArray(data) ? data : [])
+      }
     } catch (err) {
       setError("Failed to load participants")
-    } finally {
-      setLoading(false)
     }
-  }
-
-  async function handleBulkUpload(e) {
-    e.preventDefault()
-    if (!file) return
-    setError("")
-    setSuccess("")
-    setBulkLoading(true)
-
-    const formData = new FormData()
-    formData.append("file", file)
-
-    try {
-      const res = await fetch(`${apiUrl}/api/participants/bulk`, {
-        method: "POST",
-        headers: {
-          // Note: Don't set Content-Type for FormData, browser sets it with boundary
-          Authorization: authHeaders().Authorization
-        },
-        body: formData,
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || "Failed to upload file")
-      } else {
-        setSuccess(data.message)
-        setFile(null)
-        // Reset file input
-        document.getElementById("excel-upload").value = ""
-        fetchParticipants()
-
-        // AUTO SEND: If backend suggests, trigger the send process immediately
-        if (data.triggerSend) {
-          handleSendCertificates()
-        }
-      }
-    } catch (err) {
-      console.error("Upload handler error:", err)
-      setError("Failed to upload file. Please check if the backend is running.")
-    }
-    setBulkLoading(false)
-  }
-
-  async function handleTemplateUpload(e) {
-    e.preventDefault()
-    if (!templateFile) return
-    setError("")
-    setSuccess("")
-    setTemplateLoading(true)
-
-    const formData = new FormData()
-    formData.append("template", templateFile)
-
-    try {
-      const res = await fetch(`${apiUrl}/api/settings/template`, {
-        method: "POST",
-        headers: {
-          Authorization: authHeaders().Authorization
-        },
-        body: formData,
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || "Failed to upload template")
-      } else {
-        setSuccess("Certificate template uploaded successfully! All future certificates will use this design.")
-        setTemplateFile(null)
-        document.getElementById("template-upload").value = ""
-      }
-    } catch (err) {
-      setError("Failed to upload template")
-    }
-    setTemplateLoading(false)
   }
 
   async function handleAddParticipant(e) {
@@ -123,7 +81,7 @@ export default function DashboardPage() {
     setSuccess("")
     setAddLoading(true)
     try {
-      const res = await fetch(`${apiUrl}/api/participants`, {
+      const res = await fetch(`${getApiUrl()}/api/participants`, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify(form),
@@ -136,7 +94,7 @@ export default function DashboardPage() {
       }
       setParticipants((prev) => [data, ...prev])
       setForm({ name: "", email: "", eventName: "" })
-      setSuccess("Participant added successfully.")
+      setSuccess("Participant added")
     } catch (err) {
       setError("Failed to add participant")
     }
@@ -148,9 +106,9 @@ export default function DashboardPage() {
     setSuccess("")
     setSending(true)
     try {
-      const res = await fetch(`${apiUrl}/api/send-certificates`, {
+      const res = await fetch(`${getApiUrl()}/api/send-certificates`, {
         method: "POST",
-        headers: authHeaders(),
+        headers: authHeaders()
       })
       const data = await res.json()
       if (!res.ok) {
@@ -158,7 +116,7 @@ export default function DashboardPage() {
         setSending(false)
         return
       }
-      setSuccess(`Done. Sent: ${data.sent}, Failed: ${data.failed}`)
+      setSuccess(`Sent: ${data.sent}, Failed: ${data.failed}`)
       fetchParticipants()
     } catch (err) {
       setError("Failed to send certificates")
@@ -166,333 +124,344 @@ export default function DashboardPage() {
     setSending(false)
   }
 
-  async function handleLogout() {
+  async function handleUploadTemplate(e) {
+    e.preventDefault()
+    if (!templateFile) return
+    setError("")
+    setSuccess("")
+    setUploading(true)
+
+    const formData = new FormData()
+    formData.append("template", templateFile)
+
     try {
-      await fetch(`${apiUrl}/api/auth/logout`, { method: "POST" })
-    } catch { }
+      const res = await fetch(`${getApiUrl()}/api/settings/template`, {
+        method: "POST",
+        body: formData,
+      })
+      const data = await res.json()
+      if (res.ok) setSuccess("Template uploaded successfully!")
+      else setError(data.error || "Upload failed")
+    } catch (e) {
+      setError("Upload error")
+    }
+    setUploading(false)
+  }
+
+  async function handleSaveSettings(e) {
+    e.preventDefault()
+    setError("")
+    setSuccess("")
+    setSavingSettings(true)
+    try {
+      const res = await fetch(`${getApiUrl()}/api/settings/config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      })
+      if (res.ok) setSuccess("Settings saved successfully!")
+      else setError("Save failed")
+    } catch (e) {
+      setError("Save error")
+    }
+    setSavingSettings(false)
+  }
+
+  async function handleBulkUpload(e) {
+    e.preventDefault()
+    if (!excelFile) return
+    setError("")
+    setSuccess("")
+    setBulkLoading(true)
+
+    const formData = new FormData()
+    formData.append("file", excelFile)
+
+    try {
+      const token = getToken()
+      const res = await fetch(`${getApiUrl()}/api/participants/bulk`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        body: formData,
+      })
+      const data = await res.json()
+
+      if (res.ok) {
+        setSuccess(data.message || "Bulk upload successful")
+        setExcelFile(null)
+        // Reset file input if possible or just rely on state
+        fetchParticipants()
+      } else {
+        setError(data.error || "Bulk upload failed")
+      }
+    } catch (err) {
+      setError("Bulk upload error: " + err.message)
+    }
+    setBulkLoading(false)
+  }
+
+  async function handleLogout() {
     clearToken()
-    router.push("/")
+    router.push("/login")
     router.refresh()
   }
 
   const pendingCount = participants.filter((p) => p.status === "PENDING").length
-  const sentCount = participants.filter((p) => p.status === "SENT").length
-  const failedCount = participants.filter((p) => p.status === "FAILED").length
-
-  function getStatusStyle(status) {
-    if (status === "SENT") return { ...styles.badge, background: "var(--color-success)", color: "white" }
-    if (status === "FAILED") return { ...styles.badge, background: "var(--color-failed)", color: "white" }
-    return { ...styles.badge, background: "var(--color-pending)", color: "white" }
-  }
 
   return (
-    <div style={styles.wrapper}>
-      <Navbar />
-      <main style={styles.main}>
-        <header style={styles.header}>
-          <div>
-            <h1 style={styles.h1}>Admin Dashboard</h1>
-            <p style={styles.headerSub}>Manage participants and send certificates in one click.</p>
-          </div>
-          <button onClick={handleLogout} style={styles.logout}>Logout</button>
-        </header>
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: 40 }}>
+      {/* Header */}
+      <header className="header-container">
+        <h1 className="title" style={{ textAlign: "left", margin: 0 }}>
+          Admin Dashboard
+        </h1>
+        <button onClick={handleLogout} className="btn-primary" style={{ width: "auto" }}>
+          Logout
+        </button>
+      </header>
 
-        {error && <div style={styles.alertError}>{error}</div>}
-        {success && <div style={styles.alertSuccess}>{success}</div>}
+      {/* Error/Success Messages */}
+      {error && <p className="error-msg" style={{ marginBottom: 20 }}>{error}</p>}
+      {success && (
+        <p className="error-msg" style={{ background: "rgba(34, 197, 94, 0.2)", borderColor: "rgba(34, 197, 94, 0.4)", color: "#4ade80", marginBottom: 20 }}>
+          {success}
+        </p>
+      )}
 
-        <div style={styles.stats}>
-          <div style={styles.statCard}>
-            <span style={styles.statValue}>{pendingCount}</span>
-            <span style={styles.statLabel}>Pending</span>
-          </div>
-          <div style={styles.statCard}>
-            <span style={styles.statValue}>{sentCount}</span>
-            <span style={styles.statLabel}>Sent</span>
-          </div>
-          <div style={styles.statCard}>
-            <span style={styles.statValue}>{failedCount}</span>
-            <span style={styles.statLabel}>Failed</span>
-          </div>
-        </div>
+      {/* Row 1: Send & Template Settings */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
 
-        <section style={styles.section}>
-          <h2 style={styles.h2}>Send Certificates</h2>
-          <p style={styles.sectionP}>
-            {pendingCount === 0
-              ? "No pending participants. Add participants below, then click Send Certificates."
-              : `${pendingCount} participant(s) pending. Click once to generate PDFs and send emails via SendGrid.`}
+        {/* Send Certificates Card */}
+        <section className="card" style={{ marginBottom: 0 }}>
+          <h2 className="title" style={{ fontSize: "1.5rem", textAlign: "left" }}>
+            Send Certificates
+          </h2>
+          <p className="subtitle" style={{ textAlign: "left", marginBottom: 20 }}>
+            {pendingCount} participant(s) pending.
           </p>
           <button
             onClick={handleSendCertificates}
             disabled={sending || pendingCount === 0}
-            style={pendingCount === 0 ? styles.primaryBtnDisabled : styles.primaryBtn}
+            className="btn-primary"
+            style={{ width: "auto", opacity: pendingCount === 0 ? 0.6 : 1 }}
           >
-            {sending ? "Sending..." : "Send Certificates"}
+            {sending ? "Sending..." : "Send All Pending"}
           </button>
         </section>
 
-        <section style={styles.section}>
-          <div style={styles.headerRow}>
-            <h2 style={styles.h2}>Certificate Template (Optional)</h2>
-            <span style={styles.proBadge}>PRO</span>
-          </div>
-          <p style={styles.sectionP}>
-            Upload a blank PDF certificate (without a name). We will automatically position the student's name in the center.
-            If you don't upload one, we'll use our <strong>Premium Default Design</strong>.
-          </p>
-          <form onSubmit={handleTemplateUpload} style={styles.bulkForm}>
-            <input
-              id="template-upload"
-              type="file"
-              accept=".pdf"
-              onChange={(e) => setTemplateFile(e.target.files[0])}
-              style={styles.fileInput}
-            />
-            <button type="submit" disabled={templateLoading || !templateFile} style={templateFile ? styles.primaryBtn : styles.submitBtnDisabled}>
-              {templateLoading ? "Uploading..." : "Save Template"}
-            </button>
-          </form>
-        </section>
+        {/* Template Settings Card */}
+        {/* Template Settings Card */}
+        <section className="card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <h2 className="title" style={{ fontSize: "1.5rem", textAlign: "left", marginBottom: 20 }}>
+            Template Settings
+          </h2>
 
-        <section style={styles.section}>
-          <h2 style={styles.h2}>Bulk Add (Excel)</h2>
-          <p style={styles.sectionP}>Upload an Excel file with columns: <strong>Name, Email, Event</strong>.</p>
-          <form onSubmit={handleBulkUpload} style={styles.bulkForm}>
-            <input
-              id="excel-upload"
-              type="file"
-              accept=".xlsx, .xls, .csv"
-              onChange={(e) => setFile(e.target.files[0])}
-              style={styles.fileInput}
-            />
-            <button type="submit" disabled={bulkLoading || !file} style={file ? styles.submitBtn : styles.submitBtnDisabled}>
-              {bulkLoading ? "Uploading..." : "Upload Excel"}
-            </button>
-          </form>
-        </section>
-
-        <section style={styles.section}>
-          <h2 style={styles.h2}>Add Participant</h2>
-          <p style={styles.sectionP}>Add participant details. Certificate ID is generated automatically.</p>
-          <form onSubmit={handleAddParticipant} style={styles.form}>
-            <label style={styles.label}>Name</label>
-            <input
-              placeholder="Full name"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              required
-              style={styles.input}
-            />
-            <label style={styles.label}>Email</label>
-            <input
-              type="email"
-              placeholder="email@example.com"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              required
-              style={styles.input}
-            />
-            <label style={styles.label}>Event name</label>
-            <input
-              placeholder="e.g. Web Dev Workshop 2024"
-              value={form.eventName}
-              onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
-              required
-              style={styles.input}
-            />
-            <button type="submit" disabled={addLoading} style={styles.submitBtn}>
-              {addLoading ? "Adding..." : "Add Participant"}
-            </button>
-          </form>
-        </section>
-
-        <section style={styles.section}>
-          <h2 style={styles.h2}>Participants & Status</h2>
-          <p style={styles.sectionP}>Delivery status: PENDING (not sent), SENT, or FAILED.</p>
-          {loading ? (
-            <p style={styles.muted}>Loading...</p>
-          ) : participants.length === 0 ? (
-            <p style={styles.muted}>No participants yet. Add one above.</p>
-          ) : (
-            <div style={styles.tableWrap}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Name</th>
-                    <th style={styles.th}>Email</th>
-                    <th style={styles.th}>Event</th>
-                    <th style={styles.th}>Certificate ID</th>
-                    <th style={styles.th}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {participants.map((p) => (
-                    <tr key={p.id}>
-                      <td style={styles.td}>{p.name}</td>
-                      <td style={styles.td}>{p.email}</td>
-                      <td style={styles.td}>{p.eventName}</td>
-                      <td style={styles.td}>{p.certificateId}</td>
-                      <td style={styles.td}>
-                        <span style={getStatusStyle(p.status)}>{p.status}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* PDF Upload Section */}
+          <div style={{ marginBottom: '25px', paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>Upload Certificate PDF</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setTemplateFile(e.target.files[0])}
+                className="input-field"
+                style={{ padding: '10px', height: 'auto' }}
+              />
+              <button
+                onClick={handleUploadTemplate}
+                disabled={!templateFile || uploading}
+                className="btn-primary"
+                style={{ width: '100%', marginTop: '5px' }}
+              >
+                {uploading ? 'Uploading...' : 'Upload Template'}
+              </button>
             </div>
-          )}
-        </section>
-      </main>
-    </div>
-  )
-}
+          </div>
 
-const styles = {
-  wrapper: { minHeight: "100vh", background: "var(--color-background)" },
-  main: { maxWidth: 960, margin: "0 auto", padding: 24 },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 32,
-    flexWrap: "wrap",
-    gap: 16,
-  },
-  h1: { fontSize: "1.75rem", fontWeight: 700, color: "var(--color-text)" },
-  headerSub: { fontSize: 15, color: "var(--color-text-muted)", marginTop: 4 },
-  logout: {
-    padding: "10px 20px",
-    background: "var(--color-text-muted)",
-    color: "white",
-    border: "none",
-    borderRadius: "var(--radius)",
-    fontWeight: 600,
-    fontSize: 15,
-  },
-  alertError: {
-    padding: 14,
-    background: "var(--color-failed-bg)",
-    color: "var(--color-failed)",
-    borderRadius: "var(--radius)",
-    marginBottom: 24,
-    fontWeight: 500,
-  },
-  alertSuccess: {
-    padding: 14,
-    background: "var(--color-success-bg)",
-    color: "var(--color-success)",
-    borderRadius: "var(--radius)",
-    marginBottom: 24,
-    fontWeight: 500,
-  },
-  stats: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 16,
-    marginBottom: 24,
-  },
-  statCard: {
-    background: "var(--color-surface)",
-    padding: 20,
-    borderRadius: "var(--radius)",
-    boxShadow: "var(--shadow)",
-    textAlign: "center",
-  },
-  statValue: { display: "block", fontSize: "1.75rem", fontWeight: 700, color: "var(--color-primary)" },
-  statLabel: { fontSize: 14, color: "var(--color-text-muted)", marginTop: 4 },
-  section: {
-    background: "var(--color-surface)",
-    padding: 28,
-    borderRadius: "var(--radius-lg)",
-    boxShadow: "var(--shadow)",
-    marginBottom: 24,
-  },
-  h2: { fontSize: "1.25rem", fontWeight: 700, marginBottom: 8, color: "var(--color-text)" },
-  sectionP: { color: "var(--color-text-muted)", marginBottom: 20, fontSize: 15 },
-  primaryBtn: {
-    padding: "12px 24px",
-    background: "var(--color-primary)",
-    color: "white",
-    border: "none",
-    borderRadius: "var(--radius)",
-    fontSize: 15,
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-  headerRow: { display: "flex", alignItems: "center", gap: 10, marginBottom: 8 },
-  proBadge: {
-    background: "#FFD700",
-    color: "#000",
-    padding: "2px 8px",
-    borderRadius: 4,
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: 1,
-  },
-  primaryBtnDisabled: {
-    padding: "14px 28px",
-    background: "var(--color-text-muted)",
-    color: "white",
-    border: "none",
-    borderRadius: "var(--radius)",
-    fontSize: 16,
-    fontWeight: 600,
-    opacity: 0.7,
-    cursor: "not-allowed",
-  },
-  form: { display: "flex", flexDirection: "column", gap: 16, maxWidth: 420 },
-  bulkForm: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
-  fileInput: {
-    padding: "8px",
-    border: "2px dashed var(--color-border)",
-    borderRadius: "var(--radius)",
-    cursor: "pointer",
-  },
-  submitBtnDisabled: {
-    padding: 14,
-    background: "var(--color-text-muted)",
-    color: "white",
-    border: "none",
-    borderRadius: "var(--radius)",
-    fontSize: 16,
-    fontWeight: 600,
-    opacity: 0.6,
-    cursor: "not-allowed",
-  },
-  label: { fontSize: 14, fontWeight: 600, color: "var(--color-text)" },
-  input: {
-    padding: 12,
-    border: "1px solid var(--color-border)",
-    borderRadius: "var(--radius)",
-    fontSize: 16,
-    background: "var(--color-surface)",
-  },
-  submitBtn: {
-    padding: 14,
-    background: "var(--color-text)",
-    color: "white",
-    border: "none",
-    borderRadius: "var(--radius)",
-    fontSize: 16,
-    fontWeight: 600,
-    marginTop: 4,
-  },
-  muted: { color: "var(--color-text-muted)", fontSize: 15 },
-  tableWrap: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: {
-    textAlign: "left",
-    padding: "12px 14px",
-    borderBottom: "2px solid var(--color-border)",
-    fontSize: 13,
-    fontWeight: 600,
-    color: "var(--color-text-muted)",
-  },
-  td: { padding: "12px 14px", borderBottom: "1px solid var(--color-border)", fontSize: 15 },
-  badge: {
-    padding: "6px 12px",
-    borderRadius: 20,
-    fontSize: 12,
-    fontWeight: 600,
-  },
+          {/* Configuration Form */}
+          <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div>
+                <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>Name X Pos</label>
+                <input
+                  type="number"
+                  className="input-field"
+                  value={settings.nameX}
+                  onChange={(e) => setSettings({ ...settings, nameX: parseFloat(e.target.value) })}
+                  style={{ height: '45px' }}
+                />
+              </div>
+              <div>
+                <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>Name Y Pos</label>
+                <input
+                  type="number"
+                  className="input-field"
+                  value={settings.nameY}
+                  onChange={(e) => setSettings({ ...settings, nameY: parseFloat(e.target.value) })}
+                  style={{ height: '45px' }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>Font Size (px)</label>
+              <input
+                type="number"
+                className="input-field"
+                value={settings.nameSize}
+                onChange={(e) => setSettings({ ...settings, nameSize: parseFloat(e.target.value) })}
+                style={{ height: '45px' }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingSettings}
+              className="btn-primary"
+              style={{ marginTop: '10px', width: '100%', height: '45px' }}
+            >
+              {savingSettings ? "Saving..." : "Save Configuration"}
+            </button>
+          </form>
+        </section>
+      </div>
+
+      {/* Add Participant Card */}
+
+
+      {/* Row 2: Participant Management */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+
+        {/* Add Single Participant */}
+        <section className="card" style={{ marginBottom: 0 }}>
+          <h2 className="title" style={{ fontSize: "1.5rem", textAlign: "left", marginBottom: 20 }}>
+            Add Participant
+          </h2>
+          <form onSubmit={handleAddParticipant} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div>
+              <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>Full Name</label>
+              <input
+                placeholder="Ex. John Doe"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                required
+                className="input-field"
+                style={{ height: '45px' }}
+              />
+            </div>
+
+            <div>
+              <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>Email Address</label>
+              <input
+                type="email"
+                placeholder="Ex. john@example.com"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                required
+                className="input-field"
+                style={{ height: '45px' }}
+              />
+            </div>
+
+            <div>
+              <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>Event Name</label>
+              <input
+                placeholder="Ex. Hackathon 2024"
+                value={form.eventName}
+                onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
+                required
+                className="input-field"
+                style={{ height: '45px' }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={addLoading}
+              className="btn-primary"
+              style={{ marginTop: '10px', width: '100%', height: '45px' }}
+            >
+              {addLoading ? "Adding Participant..." : "Add Participant"}
+            </button>
+          </form>
+        </section>
+
+        {/* Bulk Import */}
+        <section className="card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <h2 className="title" style={{ fontSize: "1.5rem", textAlign: "left", marginBottom: 20 }}>
+            Bulk Import (Excel)
+          </h2>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div>
+              <p className="subtitle" style={{ textAlign: "left", marginBottom: 8, fontSize: '0.9rem' }}>
+                Supported columns: <strong>Name, Email, Event</strong>
+              </p>
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                onChange={(e) => setExcelFile(e.target.files[0])}
+                className="input-field"
+                style={{ padding: '10px', height: 'auto', width: '100%' }}
+              />
+            </div>
+
+            <button
+              onClick={handleBulkUpload}
+              disabled={!excelFile || bulkLoading}
+              className="btn-primary"
+              style={{ width: '100%', height: '45px' }}
+            >
+              {bulkLoading ? 'Processing Request...' : 'Import Participants from Excel'}
+            </button>
+          </div>
+        </section>
+      </div>
+
+      {/* Participants List */}
+      <section className="card">
+        <h2 className="title" style={{ fontSize: "1.5rem", textAlign: "left", marginBottom: 20 }}>
+          Participants
+        </h2>
+        {loading ? (
+          <p className="subtitle" style={{ textAlign: "left" }}>Loading...</p>
+        ) : participants.length === 0 ? (
+          <p className="subtitle" style={{ textAlign: "left" }}>No participants yet. Add one above.</p>
+        ) : (
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Event</th>
+                  <th>Certificate ID</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {participants.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.name}</td>
+                    <td>{p.email}</td>
+                    <td>{p.eventName}</td>
+                    <td>{p.certificateId}</td>
+                    <td>
+                      <span className={`status-badge ${p.status === "SENT" ? "status-sent" :
+                        p.status === "FAILED" ? "status-failed" : "status-pending"
+                        }`}>
+                        {p.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </main >
+  )
 }
