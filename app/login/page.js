@@ -36,72 +36,45 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={styles.main}>
-      <div style={styles.card}>
-        <h1 style={styles.h1}>Login</h1>
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={styles.input}
-          />
-          {error && <p style={styles.error}>{error}</p>}
-          <button type="submit" disabled={loading} style={styles.button}>
-            {loading ? "Logging in..." : "Login"}
+    <main className="container-center">
+      <div className="glass-card">
+        <h1 className="title">Welcome Back</h1>
+        <p className="subtitle">Sign in to continue sending certificates</p>
+
+        <form onSubmit={handleSubmit} className="form-group">
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="input-field"
+            />
+          </div>
+
+          <div className="input-group">
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="input-field"
+            />
+          </div>
+
+          {error && <p className="error-msg">{error}</p>}
+
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? "Logging in..." : "Sign In"}
           </button>
         </form>
-        <p style={styles.footer}>
+
+        <p className="footer-text">
           Don&apos;t have an account? <Link href="/signup">Sign up</Link>
         </p>
       </div>
     </main>
   )
-}
-
-const styles = {
-  main: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  card: {
-    background: "white",
-    padding: 32,
-    borderRadius: 12,
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-    width: "100%",
-    maxWidth: 360,
-  },
-  h1: { marginBottom: 24, fontSize: "1.5rem" },
-  form: { display: "flex", flexDirection: "column", gap: 16 },
-  input: {
-    padding: 12,
-    border: "1px solid #ddd",
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  error: { color: "#c00", fontSize: 14 },
-  button: {
-    padding: 12,
-    background: "#0070f3",
-    color: "white",
-    border: "none",
-    borderRadius: 8,
-    fontSize: 16,
-    cursor: "pointer",
-  },
-  footer: { marginTop: 16, fontSize: 14, color: "#666" },
 }
