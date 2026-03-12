@@ -18,9 +18,19 @@ const path = require("path");
  */
 async function generateCertificatePDF({ name, eventName, certificateId }) {
   const templatePath = path.join(__dirname, "../uploads/template.pdf");
+  const settingsPath = path.join(__dirname, "../uploads/settings.json");
   let pdfDoc;
   let page;
   let width, height;
+
+  let customSettings = null;
+  if (fs.existsSync(settingsPath)) {
+    try {
+      customSettings = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
+    } catch (e) {
+      console.error("Error reading settings.json", e);
+    }
+  }
 
   const hasTemplate = fs.existsSync(templatePath);
 
@@ -89,16 +99,34 @@ async function generateCertificatePDF({ name, eventName, certificateId }) {
   // We placement is tuned for standard portrait/landscape templates.
 
   // 1. Participant Name
-  const nameSize = hasTemplate ? 26 : 48; // Smaller for templates
+  let nameSize = hasTemplate ? 26 : 48; // Smaller for templates
+  if (customSettings && customSettings.nameSize) {
+    nameSize = customSettings.nameSize;
+  }
+
   const nameWidth = fontBold.widthOfTextAtSize(name, nameSize);
 
-  // Vertical alignment Adjustment:
-  // Based on the user's photo, the name was overlapping the title at 0.43.
-  // We're moving it down significantly to hit the "This Is To Certify That" line.
-  const nameY = hasTemplate ? height * 0.34 : height - 300;
+  // Default coordinate calculations
+  let nameX = (width - nameWidth) / 2;
+  let nameY = hasTemplate ? height * 0.34 : height - 300;
+
+  // Obey custom settings if provided via dashboard
+  if (customSettings) {
+    if (customSettings.nameX && customSettings.nameX !== 0) {
+      // User specified exact X position
+      nameX = customSettings.nameX;
+    } else {
+      // If 0 or not set, center it based on width
+      nameX = (width - nameWidth) / 2;
+    }
+
+    if (customSettings.nameY && customSettings.nameY !== 0) {
+      nameY = customSettings.nameY;
+    }
+  }
 
   page.drawText(name, {
-    x: (width - nameWidth) / 2,
+    x: nameX,
     y: nameY,
     size: nameSize,
     font: fontBold,
