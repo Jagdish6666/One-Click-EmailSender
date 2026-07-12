@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: certificate_db
+    environment:
+      MYSQL_ROOT_PASSWORD: super
+      MYSQL_DATABASE: certificate_sender
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: certificate_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=jdbc:mysql://mysql:3306/certificate_sender?createDatabaseIfNotExist=true&useSSL=false
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=super
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-8a2f7c9e3d4b1a6c5e8f4d9b2a7c3e1f0a5b8d2c6e9f4c1b3a7d5e8f9a2b4c6e_make_it_a_strong_key}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: certificate_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Use backend container name for server-to-server calls if SSR is used, 
+      # but since Axios hits from browser, it needs localhost:8080
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

@@ -1,0 +1,61 @@
+# Node
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Environment files
+.env
+.env.local
+*.env
+*.env.local
+backend/.env
+frontend/.env.local
+
+
+# Java / Spring Boot
+backend/target/
+backend/.mvn/
+backend/build/
+.gradle/
+build/
+
+# Logs and temps
+*.log
+backend/*.log
+backend/app_combined_err.log
+backend/app_err.log
+backend/backend_start.log
+backend/build_err2.log
+backend/build_out.log
+backend/build_out2.log
+backend/build_output.txt
+backend/build_stderr.log
+backend/build_stdout.log
+backend/package_log.txt
+backend/package_result.log
+backend/run-8081.err.log
+backend/run-8081.log
+backend/run.err.log
+backend/run.log
+backend/run_backend_output.log
+backend/run_output.log
+backend/startup_log.txt
+backend/startup_test.log
+frontend/run-3002.err.log
+frontend/run-3002.log
+frontend/run.err.log
+frontend/run.log
+
+# IDEs and OS
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
