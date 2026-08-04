@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: participant-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/participants/**
+        - id: certificate-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/certificates/**, /api/templates/**
+        - id: auth-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/auth/**
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${CLERK_JWKS_URI:https://clerk.example.com/.well-known/jwks.json}
+
+app:
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:3001,http://localhost:3002"
