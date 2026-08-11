@@ -20,26 +20,18 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:3001,http://localhost:3002}")
     private String allowedOrigins;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:}")
-    private String jwkSetUri;
-
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // Disable Spring Security's built-in auth entirely — our custom GlobalFilter handles JWT
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .pathMatchers("/", "/error", "/favicon.ico").permitAll()
-                .pathMatchers("/api/debug/**").permitAll()
-                .pathMatchers(HttpMethod.POST, "/api/participants").permitAll()
-                .pathMatchers("/api/participants/**", "/api/certificates/**", "/api/templates/**", "/api/auth/**").authenticated()
-                .anyExchange().authenticated()
-            );
-
-        if (jwkSetUri != null && !jwkSetUri.isBlank()) {
-            http.oauth2ResourceServer(oauth2 -> oauth2.jwt(org.springframework.security.config.Customizer.withDefaults()));
-        }
+                .anyExchange().permitAll()
+            )
+            .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+            .formLogin(ServerHttpSecurity.FormLoginSpec::disable);
 
         return http.build();
     }

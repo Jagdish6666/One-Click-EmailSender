@@ -20,11 +20,9 @@ spring:
           predicates:
             - Path=/api/auth/**
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${CLERK_JWKS_URI:https://clerk.example.com/.well-known/jwks.json}
+# JWT Configuration (same secret as auth-service)
+jwt:
+  secret: ${JWT_SECRET:eW91cl9zdXBlcl9zZWNyZXRfand0X2tleV90aGF0X2lzX2F0X2xlYXN0XzI1Nl9iaXRzX2xvbmdfZm9yX2htYWNfc2hhXzI1Ng==}
 
 app:
   cors:

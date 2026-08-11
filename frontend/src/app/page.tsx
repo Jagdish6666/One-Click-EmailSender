@@ -1,21 +1,21 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useAuth } from '@/context/auth';
 import { Award, Mail, Shield, Zap, CheckCircle2 } from 'lucide-react';
 
 export default function Home() {
     const router = useRouter();
-    const { isLoaded, isSignedIn } = useAuth();
+    const { isAuthenticated, isLoading } = useAuth();
 
     useEffect(() => {
-        if (isLoaded && isSignedIn) {
+        if (!isLoading && isAuthenticated) {
             router.push('/dashboard');
         }
-    }, [isLoaded, isSignedIn, router]);
+    }, [isLoading, isAuthenticated, router]);
 
-    if (!isLoaded) return null;
+    if (isLoading) return null;
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -27,7 +27,7 @@ export default function Home() {
                     </div>
                     <span className="text-xl font-bold tracking-tight text-slate-900">CertifyHub</span>
                 </div>
-                {!isSignedIn && (
+                {!isAuthenticated && (
                     <div className="flex items-center gap-4">
                         <button onClick={() => router.push('/sign-in')} className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">
                             Sign In
@@ -57,16 +57,20 @@ export default function Home() {
                             <button onClick={() => router.push('/sign-up')} className="btn-primary text-base px-8 py-4">
                                 Start Scaling Now
                             </button>
-                            <button className="btn-secondary text-base px-8 py-4 flex items-center gap-2">
+                            <button onClick={() => router.push('/sign-in')} className="btn-secondary text-base px-8 py-4 flex items-center gap-2">
                                 <Shield className="h-5 w-5 text-slate-400" />
-                                Secure with Clerk
+                                Secure Login
                             </button>
                         </div>
 
                         <div className="mt-12 flex items-center gap-6 justify-center lg:justify-start grayscale opacity-50">
                             <span className="text-sm font-semibold text-slate-400 uppercase tracking-widest">Powered By</span>
-                            <div className="flex items-center gap-2">
-                                <div className="h-6 w-24 bg-slate-200 rounded animate-pulse" />
+                            <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
+                                <span>Spring Boot</span>
+                                <span>·</span>
+                                <span>RabbitMQ</span>
+                                <span>·</span>
+                                <span>SendGrid</span>
                             </div>
                         </div>
                     </div>
@@ -78,7 +82,7 @@ export default function Home() {
                                 <div className="p-8 text-center">
                                     <Mail className="h-12 w-12 text-indigo-400 mx-auto mb-4" />
                                     <div className="text-lg font-bold mb-2">Automated Workflow</div>
-                                    <div className="text-sm text-slate-400 max-w-xs mx-auto">Upload Excel, design template, and click send. We handle the rest synchronously.</div>
+                                    <div className="text-sm text-slate-400 max-w-xs mx-auto">Upload Excel, design template, and click send. Certificates processed asynchronously via RabbitMQ.</div>
                                 </div>
                             </div>
                         </div>
@@ -100,7 +104,7 @@ export default function Home() {
                                 <Shield className="h-6 w-6" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900">Secure by Default</h3>
-                            <p className="text-slate-600">Enterprise-grade authentication powered by Clerk OAuth2 and JWT validation.</p>
+                            <p className="text-slate-600">Enterprise-grade authentication powered by Spring Security and JWT authorization.</p>
                         </div>
                         <div className="space-y-4">
                             <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">

@@ -13,6 +13,9 @@ public class AuthServiceApplication {
             dotenv.entries().forEach(entry -> {
                 String value = entry.getValue();
                 if (value != null && !value.isEmpty()) {
+                    if (entry.getKey().equals("DATABASE_URL") && value.startsWith("mysql://")) {
+                        value = "jdbc:" + value;
+                    }
                     System.setProperty(entry.getKey(), value);
                 }
             });
