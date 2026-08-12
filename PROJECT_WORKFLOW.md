@@ -9,8 +9,7 @@ This document explains the complete, end-to-end working flow of the One-Click-Em
 The project is built using a **Microservices Architecture** with the following components:
 
 - **Frontend:** Next.js (React) + TailwindCSS
-- **API Gateway (Port 8080):** The entry point. Handles routing and JWT validation using Spring Cloud Gateway.
-- **Auth Service (Port 8082):** Handles user registration, login, password hashing (BCrypt), and JWT Token generation.
+- **API Gateway (Port 8080):** The entry point. Handles routing, user registration, login, password hashing (BCrypt), and JWT Token generation & validation.
 - **Participant Service (Port 8083):** Parses Excel files (Apache POI) and manages participant records in the MySQL database.
 - **Certificate Service (Port 8084):** Generates personalized PDFs (OpenPDF) and pushes tasks to RabbitMQ.
 - **Notification Service (Port 8085):** Listens to RabbitMQ, sends emails (SendGrid API), and updates participant status.
@@ -21,7 +20,7 @@ The project is built using a **Microservices Architecture** with the following c
 ## 2. Detailed Working Flow: Step-by-Step
 
 ### Phase 1: Authentication & Setup
-1. **Login:** The Admin User logs into the frontend. The credentials are sent to the **Auth Service** via the API Gateway. The Auth Service checks MySQL, verifies the password, and returns a signed JWT Token.
+1. **Login:** The Admin User logs into the frontend. The credentials are sent to the **API Gateway**. The Gateway checks MySQL directly, verifies the password, and returns a signed JWT Token.
 2. **Frontend Storage:** The Next.js frontend saves this JWT token in LocalStorage and attaches it as a `Bearer` token to the `Authorization` header of all future API requests.
 3. **Template Upload:** The Admin uploads a blank PDF certificate template. The **API Gateway** intercepts the request, validates the JWT token, and routes it to the **Certificate Service**, which saves the template in the database as a `LONGBLOB`.
 4. **Participant Upload:** The Admin uploads an Excel file (.xlsx) containing participant names and emails. The Gateway routes this to the **Participant Service**, which reads the rows and saves them into the MySQL database with a default status of `PENDING`.

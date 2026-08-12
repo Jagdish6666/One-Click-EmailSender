@@ -26,7 +26,6 @@
 
     <modules>
         <module>common-lib</module>
-        <module>auth-service</module>
         <module>participant-service</module>
         <module>certificate-service</module>
         <module>notification-service</module>

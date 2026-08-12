@@ -51,26 +51,15 @@ services:
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
-    networks:
-      - cert_network
-
-  auth-service:
-    build:
-      context: ./backend/auth-service
-    container_name: cert_auth_service
-    ports:
-      - "8082:8082"
-    environment:
       - DATABASE_URL=jdbc:mysql://mysql:3306/cert_sender_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       - DATABASE_USER=root
       - DATABASE_PASSWORD=super
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
     depends_on:
       mysql:
         condition: service_healthy
     networks:
       - cert_network
+
 
   participant-service:
     build:

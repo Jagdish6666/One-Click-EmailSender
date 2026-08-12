@@ -14,9 +14,10 @@ The system is designed as a **Modular Monolith**. All six logical services are d
 ┌───────────────────────────────────────────────┼─────────────────────────────────────────────┐
 │ SPRING BOOT MODULAR MONOLITH                  │                                             │
 │                                               ▼                                             │
-│  ┌──────────────────────┐             ┌────────────────┐                                    │
-│  │ 1. Auth Service      │◄────────────┤ API Controller │◄───── (HTTP/JWT) ───── NEXT.JS     │
-│  └──────────────────────┘             └───────┬────────┘                        FRONTEND    │
+│                                               ┌────────────────┐                                    │
+│                                               │ API Gateway    │◄───── (HTTP/JWT) ───── NEXT.JS     │
+│                                               │ (Routing/Auth) │                        FRONTEND    │
+│                                               └───────┬────────┘                                    │
 │                                               │                                             │
 │  ┌──────────────────────┐             ┌───────▼────────────────┐                            │
 │  │ 2. Participant       │◄────────────┤ 6. Bulk Orchestration  │                            │
@@ -45,7 +46,7 @@ The system is designed as a **Modular Monolith**. All six logical services are d
 
 ## 3. Per-Service Deep Dive
 
-### 3.1. Auth Service
+### 3.1. API Gateway (Routing & Auth)
 - **Responsibility:** Validates incoming JWTs against Clerk's public JWKS endpoints to establish stateless session identity and role-based access control.
 - **Inputs / Outputs:** Input: `Bearer JWT`. Output: `Authentication` object injected into the Spring Security Context.
 - **Upstream dependencies:** Clerk JWKS URI.

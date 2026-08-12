@@ -1,6 +1,6 @@
-package com.project.certificates.auth.repository;
+package com.project.certificates.gateway.repository;
 
-import com.project.certificates.auth.entity.User;
+import com.project.certificates.gateway.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

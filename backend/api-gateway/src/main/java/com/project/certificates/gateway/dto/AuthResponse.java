@@ -1,4 +1,4 @@
-package com.project.certificates.auth.dto;
+package com.project.certificates.gateway.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

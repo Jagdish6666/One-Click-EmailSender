@@ -1,4 +1,4 @@
-package com.project.certificates.auth.entity;
+package com.project.certificates.gateway.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

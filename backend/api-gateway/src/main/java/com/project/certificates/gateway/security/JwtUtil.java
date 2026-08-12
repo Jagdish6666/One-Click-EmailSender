@@ -16,6 +16,18 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
+    public String generateToken(Long id, String email, String username, String role) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("id", id)
+                .claim("username", username)
+                .claim("role", role)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + Long.parseLong(System.getenv().getOrDefault("JWT_EXPIRATION", "86400000"))))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())

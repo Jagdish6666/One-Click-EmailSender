@@ -1,4 +1,4 @@
-package com.project.certificates.auth.dto;
+package com.project.certificates.gateway.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

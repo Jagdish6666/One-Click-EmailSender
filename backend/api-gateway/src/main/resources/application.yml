@@ -15,14 +15,22 @@ spring:
           uri: http://localhost:8084
           predicates:
             - Path=/api/certificates/**, /api/templates/**
-        - id: auth-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/auth/**
-
+  datasource:
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/cert_sender_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC}
+    username: ${DATABASE_USER:root}
+    password: ${DATABASE_PASSWORD:super}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
 # JWT Configuration (same secret as auth-service)
 jwt:
   secret: ${JWT_SECRET:eW91cl9zdXBlcl9zZWNyZXRfand0X2tleV90aGF0X2lzX2F0X2xlYXN0XzI1Nl9iaXRzX2xvbmdfZm9yX2htYWNfc2hhXzI1Ng==}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+
 
 app:
   cors:
